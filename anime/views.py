@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import time
 from dotenv import load_dotenv
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -14,40 +15,40 @@ from .models import Character, ChatThread, ChatMessage, Profile
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+# 1. FIXED SEARCH HELPER (Updated for latest DDGS API)
 def get_character_facts(name):
     try:
         with DDGS() as ddgs:
-            search_query = f"{name} anime character official wiki facts personality"
-            results = list(ddgs.text(search_query, max_results=3))
-            return "\n".join([r['body'] for r in results])
-    except:
-        return "No specific web data found."
+            search_query = f"{name} anime character personality wiki"
+            # Using list comprehension to safely get the body text
+            results = [r['body'] for r in ddgs.text(search_query, max_results=3)]
+            if results:
+                return "\n".join(results)
+    except Exception as e:
+        print(f"Fact Search Error: {e}")
+    return "No specific web data found."
 
-# 2. NEW IMAGE HELPER (Finds real images instead of generating them)
+# 2. FIXED IMAGE HELPER (Corrected list indexing)
 def get_real_character_art(name):
     try:
         with DDGS() as ddgs:
-            # Search for high-quality official art
             search_query = f"{name} anime official character art high res"
-            results = list(ddgs.images(
-                search_query,
-                region="wt-wt",
-                safesearch="off",
-                size="Large",
-                max_results=5
-            ))
+            # size='Large' helps get high-quality images
+            results = list(ddgs.images(search_query, region="wt-wt", safesearch="off", size="Large", max_results=5))
 
             if results:
-                # Use the 1st result for profile, 2nd for wallpaper (if available)
-                profile_url = results[0]['image']
-                wallpaper_url = results[1]['image'] if len(results) > 1 else results[0]['image']
+                # Safely get the image URL from the dictionary
+                profile_url = results[0].get('image')
+                # Try to get a different second image for wallpaper
+                wallpaper_url = results[1].get('image') if len(results) > 1 else profile_url
                 return profile_url, wallpaper_url
     except Exception as e:
-        print(f"Image search error: {e}")
+        print(f"Image Search Error: {e}")
 
-    # Fallback placeholders if search fails
-    return "https://placeholder.com", "https://placeholder.com"
+    # Standard high-quality fallback placeholders
+    return "https://alphacoders.com", "https://alphacoders.com"
 
+# 3. SEARCH VIEW
 def character_search(request):
     query = request.GET.get('q', '').strip()
     result = Character.objects.filter(name__icontains=query).first() if query else None
@@ -59,10 +60,12 @@ def character_search(request):
     scrolls = 0
     if request.user.is_authenticated:
         profile, _ = Profile.objects.get_or_create(user=request.user)
+        # Admin / Superuser bonus
         if request.user.username == 'emptybrain' or request.user.is_superuser:
-            profile.scrolls = 1000000000000
+            profile.scrolls = 1000000
             profile.save()
 
+        # Daily login bonus
         today = timezone.now().date()
         if profile.last_bonus_date < today:
             profile.scrolls += 100
@@ -70,8 +73,14 @@ def character_search(request):
             profile.save()
         scrolls = profile.scrolls
 
-    return render(request, 'anime/index.html', {'character': result, 'query': query, 'scrolls': scrolls, 'leaderboard': leaderboard})
+    return render(request, 'anime/index.html', {
+        'character': result,
+        'query': query,
+        'scrolls': scrolls,
+        'leaderboard': leaderboard
+    })
 
+# 4. CHAT LOGIC
 @login_required
 def chat_with_character(request, char_id):
     character = get_object_or_404(Character, id=char_id)
@@ -84,7 +93,7 @@ def chat_with_character(request, char_id):
             ChatMessage.objects.create(thread=thread, role='user', content=user_message)
             try:
                 history_objs = thread.messages.all().order_by('-timestamp')[:10]
-                history_objs = reversed(history_objs)
+                history_objs = reversed(list(history_objs))
 
                 groq_messages = [
                     {"role": "system", "content": f"You are {character.name}. Bio: {character.description}. Be dynamic. If insulted, get ANGRY. Start every reply with a mood tag: [MOOD: Value]."}
@@ -95,11 +104,11 @@ def chat_with_character(request, char_id):
                 chat_res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     temperature=0.7,
-                    presence_penalty=0.6,
                     messages=groq_messages
                 )
                 raw_text = chat_res.choices[0].message.content
 
+                # Parse Mood
                 if "[MOOD:" in raw_text:
                     try:
                         parts = raw_text.split("]", 1)
@@ -117,9 +126,13 @@ def chat_with_character(request, char_id):
         return redirect('chat_character', char_id=char_id)
 
     chat_history = thread.messages.all().order_by('timestamp')
-    return render(request, 'anime/chat.html', {'character': character, 'chat_history': chat_history, 'mood': thread.current_mood})
+    return render(request, 'anime/chat.html', {
+        'character': character,
+        'chat_history': chat_history,
+        'mood': thread.current_mood
+    })
 
-# 5. UPDATED SUMMON LOGIC (Saves Real Images)
+# 5. FIXED SUMMON LOGIC
 @login_required
 def summon_character(request, char_name):
     profile = request.user.profile
@@ -132,21 +145,22 @@ def summon_character(request, char_name):
 
     if not char:
         try:
+            # Step 1: Get Facts
             web_facts = get_character_facts(clean_name)
 
-            # Fetch real images from web search
+            # Step 2: Get Images
             profile_url, wallpaper_url = get_real_character_art(clean_name)
 
+            # Step 3: Llama Bio Generation
             client = Groq(api_key=GROQ_API_KEY)
             comp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": "You are a factual anime historian. Use web search data to create a bio."},
+                    {"role": "system", "content": "You are a factual anime historian. Use provided web data to create a concise, cool bio."},
                     {"role": "user", "content": f"CHARACTER: {clean_name}\nDATA: {web_facts}"}
                 ]
             )
 
-            # Character is saved with the real image URLs
             char = Character.objects.create(
                 name=clean_name,
                 description=comp.choices[0].message.content,
@@ -157,11 +171,12 @@ def summon_character(request, char_name):
             profile.save()
             messages.success(request, f"{clean_name} Neural Sequence Saved!")
         except Exception as e:
-            messages.error(request, f"Decryption failed: {str(e)}")
+            messages.error(request, f"Summoning failed: {str(e)}")
             return redirect('character_search')
     else:
         char.summon_count += 1
         char.save()
+
     return redirect(f"/?q={clean_name}")
 
 @login_required
