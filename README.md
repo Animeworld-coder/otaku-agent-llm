@@ -1,20 +1,26 @@
 # 🎌 Otaku-Agent-LLM
+[![Status: Live](https://shields.io)](https://pythonanywhere.com)
+[![Python](https://shields.io)](https://python.org)
+[![Django](https://shields.io)](https://djangoproject.com)
 
-An AI-powered anime character companion with a dynamic **personality system**.
+An advanced AI-powered anime character companion featuring a dynamic **Personality & Mood System**.
 
-## 🚀 Features
-- **Neural Chat:** Powered by Llama-3 (Groq) for authentic character interactions.
-- **Anti-Hallucination Search:** Uses DuckDuckGo to verify character lore and facts in real-time.
-- **Summon System:** Use 'Scrolls' to bring new characters to life with AI-generated bios and art.
-- **Mood System:** AI responses adapt based on character mood tags.
+## 🌟 Key Features
+- **🧠 Neural Chat:** Immersive conversations powered by Llama-3 (via Groq).
+- **🔍 Real-time Fact Checking:** Integrated with DuckDuckGo Search to prevent AI hallucinations regarding anime lore.
+- **📜 Summoning System:** Uses a custom 'Scroll' currency to generate new characters with AI bios and high-quality art.
+- **🎭 Mood Engine:** Responses are prefixed with `[MOOD: Value]` tags, allowing the AI to stay in character even when provoked.
+- **🎨 AI Art Generation:** Dynamic portraits and wallpapers via Pollinations.ai.
 
 ## 🛠️ Tech Stack
-- Django (Python)
-- Groq API (Llama-3)
-- DuckDuckGo Search
-- Pollinations.ai (Image Generation)
+- **Backend:** Django (Python)
+- **LLM:** Llama-3-70B (Groq API)
+- **Search:** DuckDuckGo Search API
+- **Images:** Pollinations.ai (Flux Model)
+- **Hosting:** [PythonAnywhere](https://pythonanywhere.com)
 
-## ⚙️ Setup
-1. Install dependencies: `pip install -r requirements.txt`
-2. Create a `.env` file with your `GROQ_API_KEY`.
-3. Run `python manage.py runserver`.
+## ⚙️ Installation & Local Setup
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com
+   cd otaku-agent-llm
