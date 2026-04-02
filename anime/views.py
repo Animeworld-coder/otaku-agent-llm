@@ -1,7 +1,7 @@
 import os
 import json
 import random
-from dotenv import load_dotenv # Added for security
+from dotenv import load_dotenv
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -11,12 +11,9 @@ from groq import Groq
 from duckduckgo_search import DDGS
 from .models import Character, ChatThread, ChatMessage, Profile
 
-# --- CONFIGURATION ---
-# This loads the variables from your .env file
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# 1. SEARCH HELPER (Stops Hallucinations)
 def get_character_facts(name):
     try:
         with DDGS() as ddgs:
@@ -26,16 +23,31 @@ def get_character_facts(name):
     except:
         return "No specific web data found."
 
-# 2. IMAGE HELPER (Fixed /p/ and Seed logic)
-def get_ai_art(prompt_name, art_type="profile"):
-    seed = random.randint(1, 1000000)
-    clean_name = prompt_name.replace(" ", "%20")
-    if art_type == "wallpaper":
-        return f"https://pollinations.ai{clean_name}%20anime%20landscape%204k?width=1920&height=1080&seed={seed}&model=flux"
-    else:
-        return f"https://pollinations.ai{clean_name}%20anime%20portrait?width=1024&height=1024&seed={seed}&model=flux"
+# 2. NEW IMAGE HELPER (Finds real images instead of generating them)
+def get_real_character_art(name):
+    try:
+        with DDGS() as ddgs:
+            # Search for high-quality official art
+            search_query = f"{name} anime official character art high res"
+            results = list(ddgs.images(
+                search_query,
+                region="wt-wt",
+                safesearch="off",
+                size="Large",
+                max_results=5
+            ))
 
-# 3. MAIN SEARCH VIEW (With Auto-Summon)
+            if results:
+                # Use the 1st result for profile, 2nd for wallpaper (if available)
+                profile_url = results[0]['image']
+                wallpaper_url = results[1]['image'] if len(results) > 1 else results[0]['image']
+                return profile_url, wallpaper_url
+    except Exception as e:
+        print(f"Image search error: {e}")
+
+    # Fallback placeholders if search fails
+    return "https://placeholder.com", "https://placeholder.com"
+
 def character_search(request):
     query = request.GET.get('q', '').strip()
     result = Character.objects.filter(name__icontains=query).first() if query else None
@@ -60,13 +72,10 @@ def character_search(request):
 
     return render(request, 'anime/index.html', {'character': result, 'query': query, 'scrolls': scrolls, 'leaderboard': leaderboard})
 
-# 4. NEURAL CHAT (Memory + Fixed Mood Parser)
 @login_required
 def chat_with_character(request, char_id):
     character = get_object_or_404(Character, id=char_id)
     thread, _ = ChatThread.objects.get_or_create(user=request.user, character=character)
-
-    # Using the secured key
     client = Groq(api_key=GROQ_API_KEY)
 
     if request.method == "POST":
@@ -110,7 +119,7 @@ def chat_with_character(request, char_id):
     chat_history = thread.messages.all().order_by('timestamp')
     return render(request, 'anime/chat.html', {'character': character, 'chat_history': chat_history, 'mood': thread.current_mood})
 
-# 5. SUMMON LOGIC (Factual & Image Fixed)
+# 5. UPDATED SUMMON LOGIC (Saves Real Images)
 @login_required
 def summon_character(request, char_name):
     profile = request.user.profile
@@ -124,20 +133,25 @@ def summon_character(request, char_name):
     if not char:
         try:
             web_facts = get_character_facts(clean_name)
+
+            # Fetch real images from web search
+            profile_url, wallpaper_url = get_real_character_art(clean_name)
+
             client = Groq(api_key=GROQ_API_KEY)
             comp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": "You are a factual anime historian. Use web search data. If unknown, create a cool Original Character (OC) bio. Don't lie about famous shows."},
+                    {"role": "system", "content": "You are a factual anime historian. Use web search data to create a bio."},
                     {"role": "user", "content": f"CHARACTER: {clean_name}\nDATA: {web_facts}"}
                 ]
             )
 
+            # Character is saved with the real image URLs
             char = Character.objects.create(
                 name=clean_name,
                 description=comp.choices[0].message.content,
-                image_url=get_ai_art(clean_name, "profile"),
-                wallpaper_url=get_ai_art(clean_name, "wallpaper")
+                image_url=profile_url,
+                wallpaper_url=wallpaper_url
             )
             profile.scrolls -= 1
             profile.save()
