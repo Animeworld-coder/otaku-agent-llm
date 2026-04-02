@@ -1,0 +1,115 @@
+{% extends "anime/base.html" %} <!-- Changed from index.html to base.html to fix the sidebar -->
+
+{% block extra_css %}
+<style>
+    .register-container {
+        background: #111;
+        padding: 40px;
+        border-radius: 30px;
+        border: 1px solid #222;
+        max-width: 450px;
+        margin: 60px auto;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .register-logo {
+        font-size: 2rem;
+        font-weight: 900;
+        color: #e50914;
+        margin-bottom: 30px;
+        letter-spacing: 2px;
+    }
+
+    /* This styles the Django-generated form fields to look like your DNA theme */
+    form p { text-align: left; }
+    form label { display: block; color: #888; font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px; }
+
+    input {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        border: 1px solid #333;
+        background: #000;
+        color: white;
+        font-size: 1rem;
+        transition: 0.3s;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    input:focus {
+        border-color: #e50914;
+        box-shadow: 0 0 10px rgba(229, 9, 20, 0.3);
+    }
+
+    button {
+        width: 100%;
+        padding: 18px;
+        background: #e50914;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 900;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: 0.3s;
+        font-size: 1rem;
+        letter-spacing: 1px;
+        box-shadow: 0 5px 15px rgba(229,9,20,0.4);
+    }
+
+    button:hover {
+        background: #ff0f1a;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(229,9,20,0.6);
+    }
+
+    .helptext, .errorlist { color: #555; font-size: 0.75rem; list-style: none; padding: 0; margin-bottom: 10px; }
+    .errorlist { color: #e50914; font-weight: bold; }
+
+    .links {
+        margin-top: 25px;
+        border-top: 1px solid #222;
+        padding-top: 20px;
+    }
+
+    .links a {
+        color: #888;
+        text-decoration: none;
+        font-size: 0.9rem;
+        display: block;
+        margin: 8px 0;
+        transition: 0.2s;
+    }
+
+    .links a:hover { color: #e50914; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-logo">ANIME<span style="color:white">DNA</span></div>
+    <h2 style="margin-bottom: 10px; font-weight: 800;">Create Account</h2>
+    <p style="color: #666; font-size: 0.9rem; margin-bottom: 30px;">Register to unlock the genetic archives.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <!-- Use form.as_p so Django's UserCreationForm actually works -->
+        {{ form.as_p }}
+        <button type="submit">REGISTER ACCOUNT</button>
+    </form>
+
+    <div class="links">
+        <a href="{% url 'login' %}">Already have an account? <span style="color: #e50914; font-weight: bold;">Login</span></a>
+        <a href="{% url 'character_search' %}">← Back to Search</a>
+    </div>
+</div>
+{% endblock %}

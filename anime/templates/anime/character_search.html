@@ -1,0 +1,145 @@
+{% extends "anime/base.html" %}
+
+{% block extra_css %}
+<style>
+    :root { --primary: #e50914; --bg: #050505; --card: #111; }
+
+    /* Centered Layout like ChatGPT */
+    .chat-interface {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .dna-logo {
+        font-size: 3rem;
+        font-weight: 900;
+        margin-bottom: 40px;
+        letter-spacing: -2px;
+        animation: pulse 2s infinite;
+    }
+
+    /* Search Bar Styling */
+    .search-wrapper {
+        width: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 5px 15px;
+        transition: 0.3s;
+    }
+
+    .search-wrapper:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 15px rgba(229, 9, 20, 0.2);
+    }
+
+    #search-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: white;
+        padding: 15px;
+        font-size: 1.1rem;
+        outline: none;
+    }
+
+    .scan-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .scan-btn:hover { background: #ff0000; }
+
+    /* Results Grid */
+    .results-area {
+        width: 100%;
+        margin-top: 40px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .neural-card {
+        background: var(--card);
+        border: 1px solid #222;
+        border-radius: 15px;
+        overflow: hidden;
+        text-align: left;
+        animation: fadeInUp 0.5s ease forwards;
+    }
+
+    .neural-card img { width: 100%; height: 200px; object-fit: cover; }
+    .card-body { padding: 20px; }
+    .card-body h3 { margin: 0 0 10px 0; color: var(--primary); }
+    .card-body p { font-size: 0.9rem; color: #aaa; line-height: 1.4; }
+
+    .action-btn {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 8px 16px;
+        background: #222;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .action-btn:hover { background: var(--primary); }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-interface">
+    <div class="dna-logo">ANIME<span style="color:white">DNA</span></div>
+
+    <div class="search-wrapper">
+        <input type="text" id="search-input" placeholder="Enter character name to initialize link..." autocomplete="off">
+        <button class="scan-btn" onclick="summonCharacter()">SCAN</button>
+    </div>
+
+    <!-- Status Message (Hidden by default) -->
+    <p id="status-text" style="margin-top: 20px; color: #444; font-weight: bold; display: none;">DECODING NEURAL SEQUENCE...</p>
+
+    <div id="results" class="results-area">
+        <!-- Resulting character will appear here after search -->
+    </div>
+</div>
+
+<script>
+function summonCharacter() {
+    const name = document.getElementById("search-input").value.trim();
+    const status = document.getElementById("status-text");
+    const results = document.getElementById("results");
+
+    if (!name) return;
+
+    // Show Loading
+    status.style.display = "block";
+    results.innerHTML = "";
+
+    // IMPORTANT: In your urls.py, the path is 'summon/<str:char_name>/'
+    // We redirect the browser to the summon URL instead of fetch to match your view logic
+    window.location.href = `/summon/${encodeURIComponent(name)}/`;
+}
+</script>
+{% endblock %}

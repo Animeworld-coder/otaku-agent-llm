@@ -1,0 +1,14 @@
+# Security: Secret environment variables
+.env
+
+# Python: Temporary and cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local database (if you are using SQLite)
+db.sqlite3
+
+# Folders for virtual environments
+venv/
+env/

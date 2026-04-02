@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Battle Arena</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
+        .battle-card { border: 1px solid #444; padding: 10px; margin-bottom: 10px; background: #222; }
+    </style>
+</head>
+<body>
+    <h1>Battle Arena</h1>
+    {% for battle in battles %}
+        <div class="battle-card">
+            <strong>Battle #{{ battle.id }}</strong><br>
+            Player1: {{ battle.player1.username }}<br>
+            Player2: {{ battle.player2.username if battle.player2 else "NPC" }}<br>
+            Winner: {{ battle.winner.username if battle.winner else "TBD" }}<br>
+            Created: {{ battle.created_at }}
+        </div>
+    {% empty %}
+        <p>No battles yet. Go start one!</p>
+    {% endfor %}
+</body>
+</html>

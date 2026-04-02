@@ -1,0 +1,75 @@
+{% extends "anime/index.html" %}
+
+{% block extra_css %}
+<style>
+    /* Styling the default Django form labels and inputs */
+    .auth-container {
+        background: rgba(10, 10, 10, 0.95);
+        padding: 40px;
+        border-radius: 30px;
+        display: inline-block;
+        border: 1px solid #222;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 0 50px rgba(229, 9, 20, 0.1);
+        margin-top: 20px;
+    }
+    .auth-container p {
+        text-align: left;
+        margin-bottom: 15px;
+    }
+    .auth-container input {
+        width: 100%;
+        padding: 14px;
+        margin-top: 8px;
+        border-radius: 12px;
+        border: 1px solid #333;
+        background: #000;
+        color: white;
+        box-sizing: border-box;
+        outline: none;
+        transition: 0.3s;
+    }
+    .auth-container input:focus {
+        border-color: #e50914;
+        box-shadow: 0 0 15px rgba(229, 9, 20, 0.2);
+    }
+    .auth-container label {
+        font-size: 0.8rem;
+        color: #e50914;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero" style="min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+    <h1 style="color: #e50914; font-size: 2.5rem; margin-bottom: 10px; letter-spacing: -1px;">Access DNA Archives 🔐</h1>
+    <p style="color: #666; margin-bottom: 20px;">Identity verification required for genetic sequencing.</p>
+
+    <div class="auth-container">
+        <!-- Error Handling -->
+        {% if form.errors %}
+            <p style="color: #ff4444; font-size: 0.85rem; text-align: center; font-weight: bold;">
+                Invalid credentials. Access Denied.
+            </p>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <div style="color: white;">
+                {{ form.as_p }}
+            </div>
+            <button type="submit" class="search-btn" style="width: 100%; margin-top: 10px; padding: 18px; border-radius: 15px; cursor: pointer; position: static;">
+                AUTHORIZE ACCESS
+            </button>
+        </form>
+
+        <p style="color: #444; margin-top: 25px; text-align: center; font-size: 0.9rem;">
+            New Scout? <a href="{% url 'register' %}" style="color: #e50914; text-decoration: none; font-weight: bold;">Sign Up here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

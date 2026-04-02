@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AnimeDNA | Neural Interface</title>
+    <style>
+        /* 1. THE COLORS & THEME */
+        :root {
+            --primary: #e50914;
+            --sidebar-bg: #000000;
+            --main-bg: #050505;
+            --card-bg: #111111;
+            --text-dim: #888888;
+        }
+
+        /* 2. THE BODY & LAYOUT LOCK */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: var(--main-bg);
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden; /* Prevents double scrollbars */
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 3. THE SIDEBAR (Locked on Desktop) */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid #222;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            flex-shrink: 0;
+            z-index: 100;
+            box-sizing: border-box;
+        }
+
+        .new-chat {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            display: block;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        .new-chat:hover { background: #222; border-color: var(--primary); box-shadow: 0 0 15px rgba(229, 9, 20, 0.2); }
+
+        .history-section { margin-top: 30px; flex-grow: 1; overflow-y: auto; }
+        .history-label { color: #444; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px; }
+
+        .history-link {
+            color: var(--text-dim);
+            display: block;
+            padding: 10px 0;
+            text-decoration: none;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: 0.2s;
+        }
+        .history-link:hover { color: white; padding-left: 5px; }
+
+        /* 4. THE MAIN CONTENT (THE SCROLLABLE AREA) */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto !important; /* UNLOCKS SCROLLING */
+            position: relative;
+            background: var(--main-bg);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* 5. CUSTOM NEON SCROLLBAR */
+        .main::-webkit-scrollbar { width: 6px; }
+        .main::-webkit-scrollbar-track { background: #000; }
+        .main::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* 6. MOBILE RESPONSIVENESS FIX */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                padding: 10px 15px;
+                border-right: none;
+                border-bottom: 1px solid #222;
+            }
+            .history-section { display: none; }
+            .main {
+                height: calc(100vh - 70px); /* Leaves room for mobile sidebar */
+            }
+            .sidebar-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px !important; }
+        }
+
+        /* 7. RE-ADDING YOUR ANIMATIONS & GLOWS */
+        @keyframes dna-glow { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .dna-bar {
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            background-size: 200% 100%;
+            animation: dna-glow 1.5s linear infinite;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <a href="{% url 'character_search' %}" class="new-chat">+ NEW NEURAL LINK</a>
+
+        <div class="history-section">
+            <p class="history-label">ESTABLISHMENTS</p>
+            {% if user.is_authenticated %}
+                {% for favorite in user.favorite_characters.all %}
+                    <a href="{% url 'chat_character' favorite.id %}" class="history-link">🧬 {{ favorite.name }}</a>
+                {% empty %}
+                    <p style="color: #333; font-size: 0.7rem;">No active sequences.</p>
+                {% endfor %}
+            {% else %}
+                <a href="{% url 'login' %}" class="history-link" style="color: var(--primary);">🔒 Authorize Access</a>
+            {% endif %}
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="sidebar-footer" style="border-top: 1px solid #222; padding-top: 15px; margin-top: auto;">
+            <p style="font-size: 0.75rem; color: #444; margin: 0;">USER: {{ user.username }}</p>
+            <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" style="background:none; border:none; color: var(--primary); padding:0; cursor:pointer; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">Disconnect</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- MAIN APP AREA -->
+    <div class="main">
+        <!-- Tiny DNA bar at top of main area for effect -->
+        <div class="dna-bar"></div>
+
+        <div style="padding: 20px;">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>
